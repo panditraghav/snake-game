@@ -108,6 +108,10 @@ export class SnakeBody {
         this.coordinates = coordinates
     }
 
+    public getCoordinates(): Coordinates{
+        return this.coordinates
+    }
+
     public getPreviousCoordinates(): Coordinates {
         return this.previousCoordinates
     }
@@ -140,13 +144,24 @@ export class Snake {
         this.ctx = ctx
     }
 
-    private checkForEatEvent(){
+    private checkForEatEvent() {
         const headCoordinates = this.snake[0].getCoordinates() as Coordinates
         const foodCoordinates = this.food.getCoordinates()
-        if(headCoordinates.x === foodCoordinates.x && headCoordinates.y === foodCoordinates.y){
+        if (headCoordinates.x === foodCoordinates.x && headCoordinates.y === foodCoordinates.y) {
             const eatEvent = new CustomEvent("eat")
             this.ctx.canvas.dispatchEvent(eatEvent)
-            console.log("Eaten")
+        }
+    }
+
+    private checkForCollision() {
+        const snakeHeadCoordinates: Coordinates = this.snake[0].getCoordinates()
+        for (let i = 1; i < this.snake.length; i++) {
+            let snakeBodyPartCoordinates: Coordinates = this.snake[i].getCoordinates()
+            if (snakeHeadCoordinates.x == snakeBodyPartCoordinates.x &&
+                snakeHeadCoordinates.y == snakeBodyPartCoordinates.y) {
+                    const collisionEvent = new CustomEvent("collision")
+                    this.ctx.canvas.dispatchEvent(collisionEvent)
+            }
         }
     }
 
@@ -164,6 +179,7 @@ export class Snake {
             thisSnakePart.setCoordinates(snakeNextPart.getPreviousCoordinates())
         }
         this.checkForEatEvent()
+        this.checkForCollision()
     }
 
     public increaseLength() {
@@ -177,7 +193,7 @@ export class Snake {
         this.snake[0].setDirection(direction)
     }
 
-    public setFood(food: SnakeFood){
+    public setFood(food: SnakeFood) {
         this.food = food
     }
 }
