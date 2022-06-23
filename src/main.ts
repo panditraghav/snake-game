@@ -1,22 +1,24 @@
 import './style.css'
 import { createCanvas } from './canvas'
-import { cap, drawRect } from './utils'
-import { Snake, Direction } from './snake'
+import { cap } from './utils'
+import { Snake } from './snake'
 import { SnakeFood } from './food'
 
 class Game {
-  private ctx: CanvasRenderingContext2D
+  private ctx: CanvasRenderingContext2D | null
   private canvas: HTMLCanvasElement
   private canvasWidth: number
   private canvasHeight: number
   private bodyPartWidth: number
   private bodyPartHeight: number
-  private intervalId: number
+  private intervalId: number | undefined
   private direction: "LEFT" | "RIGHT" | "UP" | "DOWN"
   private snake: Snake
   private food: SnakeFood
   private score: number
+  private highScore: number
   private scoreElement: HTMLSpanElement
+  private highScoreElement: HTMLSpanElement
 
   constructor() {
     this.canvasWidth = 500
@@ -25,8 +27,11 @@ class Game {
     this.bodyPartHeight = 20
     this.canvas = createCanvas(this.canvasWidth, this.canvasHeight)
     this.ctx = this.canvas.getContext("2d")
+    this.direction = "LEFT"
     this.score = 0
+    this.highScore = 0
     this.scoreElement = document.getElementById("score") as HTMLSpanElement
+    this.highScoreElement = document.getElementById("highScore") as HTMLSpanElement
     this.food = this.createFood()
     this.snake = new Snake(
       { x: this.bodyPartWidth * 8, y: this.bodyPartHeight * 8 },
@@ -46,8 +51,10 @@ class Game {
   }
 
   private renderScore() {
-    this.scoreElement.innerText = this.score
+    this.scoreElement.innerText = `${this.score}`
+    this.highScoreElement.innerText = `${this.highScore}`
   }
+
 
   private addCanvasToDom() {
     document.querySelector("#app")?.appendChild(this.canvas)
@@ -72,7 +79,7 @@ class Game {
   }
 
   private draw() {
-    this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
+    this.ctx?.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
     this.snake.draw()
     this.food.draw()
     this.snake.setDirection(this.direction)
@@ -114,8 +121,25 @@ class Game {
   private handleCollisionEvent() {
     this.canvas.addEventListener("collision", () => {
       clearInterval(this.intervalId)
-
+      this.handleGameOver()
     })
+  }
+
+  private handleGameOver() {
+    alert("You lost, try again....")
+    if (this.score > this.highScore) this.highScore = this.score
+    this.score = 0
+    this.renderScore()
+    this.food = this.createFood()
+    this.snake = new Snake(
+      { x: this.bodyPartWidth * 8, y: this.bodyPartHeight * 8 },
+      this.bodyPartWidth,
+      this.bodyPartHeight,
+      this.direction,
+      this.ctx,
+      this.food
+    )
+    this.initMovement()
   }
 }
 

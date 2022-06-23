@@ -2,22 +2,23 @@ import { drawRect } from "./utils"
 import { SnakeFood } from "./food"
 
 export type Direction = "LEFT" | "RIGHT" | "UP" | "DOWN"
-interface Coordinates {
+export interface Coordinates {
     x: number,
     y: number
 }
 
 export class SnakeHead {
     private coordinates: Coordinates
-    private previousCoordinates: Coordinates
+    private previousCoordinates: Coordinates = {x: 0 , y: 0}
     private width: number
     private height: number
-    private ctx: CanvasRenderingContext2D
+    private ctx: CanvasRenderingContext2D | null
     private color: string = "#FF0000"
     private direction: Direction = "LEFT"
 
-    constructor(coordinates: Coordinates, width: number, height: number, direction: Direction, ctx) {
+    constructor(coordinates: Coordinates, width: number, height: number, direction: Direction, ctx: CanvasRenderingContext2D | null) {
         this.coordinates = coordinates
+        this.previousCoordinates = coordinates
         this.width = width
         this.height = height
         this.direction = direction
@@ -36,6 +37,7 @@ export class SnakeHead {
     }
 
     public move() {
+        if(!this.ctx) return
         this.previousCoordinates = { ...this.coordinates }
         const canvasWidth = this.ctx.canvas.width
         const canvasHeight = this.ctx.canvas.height
@@ -79,13 +81,13 @@ export class SnakeHead {
 
 export class SnakeBody {
     private coordinates: Coordinates
-    private previousCoordinates: Coordinates
+    private previousCoordinates: Coordinates = {x: 0, y: 0}
     private width: number
     private height: number
-    private ctx: CanvasRenderingContext2D
+    private ctx: CanvasRenderingContext2D | null
     private color: string = "#000"
 
-    constructor(coordinates: Coordinates, width: number, height: number, ctx: CanvasRenderingContext2D) {
+    constructor(coordinates: Coordinates, width: number, height: number, ctx: CanvasRenderingContext2D | null) {
         this.coordinates = coordinates
         this.width = width
         this.height = height
@@ -122,8 +124,7 @@ export class Snake {
     private snake: Array<SnakeHead | SnakeBody> = new Array<SnakeHead | SnakeBody>()
     private unitWidth: number
     private unitHeight: number
-    private ctx: CanvasRenderingContext2D
-    private direction: Direction = "LEFT"
+    private ctx: CanvasRenderingContext2D | null
     private food: SnakeFood
 
     constructor(
@@ -131,7 +132,7 @@ export class Snake {
         unitWidth: number,
         unitHeight: number,
         direction: Direction,
-        ctx: CanvasRenderingContext2D,
+        ctx: CanvasRenderingContext2D | null,
         food: SnakeFood
     ) {
         const snakeHead = new SnakeHead(coordinates, unitWidth, unitHeight, direction, ctx)
@@ -139,7 +140,6 @@ export class Snake {
         this.snake.push(snakeHead, snakeBodyPart)
         this.unitWidth = unitWidth
         this.unitHeight = unitHeight
-        this.direction = direction
         this.food = food
         this.ctx = ctx
     }
@@ -149,7 +149,7 @@ export class Snake {
         const foodCoordinates = this.food.getCoordinates()
         if (headCoordinates.x === foodCoordinates.x && headCoordinates.y === foodCoordinates.y) {
             const eatEvent = new CustomEvent("eat")
-            this.ctx.canvas.dispatchEvent(eatEvent)
+            this.ctx?.canvas.dispatchEvent(eatEvent)
         }
     }
 
@@ -160,7 +160,7 @@ export class Snake {
             if (snakeHeadCoordinates.x == snakeBodyPartCoordinates.x &&
                 snakeHeadCoordinates.y == snakeBodyPartCoordinates.y) {
                     const collisionEvent = new CustomEvent("collision")
-                    this.ctx.canvas.dispatchEvent(collisionEvent)
+                    this.ctx?.canvas.dispatchEvent(collisionEvent)
             }
         }
     }
@@ -172,10 +172,11 @@ export class Snake {
     }
 
     public move() {
-        this.snake[0].move()
+        let snakeHead = this.snake[0] as SnakeHead
+        snakeHead.move()
         for (let i = 1; i < this.snake.length; i++) {
-            let thisSnakePart: SnakeBody = this.snake[i]
-            let snakeNextPart: SnakeBody = this.snake[i - 1]
+            let thisSnakePart = this.snake[i] as SnakeBody
+            let snakeNextPart = this.snake[i - 1] as SnakeBody
             thisSnakePart.setCoordinates(snakeNextPart.getPreviousCoordinates())
         }
         this.checkForEatEvent()
@@ -189,8 +190,8 @@ export class Snake {
         }
     }
     public setDirection(direction: Direction) {
-        this.direction = direction
-        this.snake[0].setDirection(direction)
+        let snakeHead = this.snake[0] as SnakeHead
+        snakeHead.setDirection(direction)
     }
 
     public setFood(food: SnakeFood) {
