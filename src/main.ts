@@ -92,7 +92,7 @@ class Game {
   private initMovement() {
     this.intervalId = setInterval(() => {
       this.move()
-    }, 200)
+    }, 150)
   }
 
   private move() {
